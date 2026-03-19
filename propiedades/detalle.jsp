@@ -4,8 +4,6 @@
 <%@ page import="java.sql.*" %>
 <%@ page import="java.util.*" %>
 <%
-out.println("ID recibido: " + request.getParameter("id"));
-out.flush();
     String idParam = request.getParameter("id");
     if (idParam == null || idParam.isEmpty()) {
         response.sendRedirect(request.getContextPath() + "/propiedades");
@@ -28,7 +26,6 @@ out.flush();
         Connection conn = java.sql.DriverManager.getConnection(
             "jdbc:mysql://by8sl4ll3wmw8dex7qzt-mysql.services.clever-cloud.com:3306/by8sl4ll3wmw8dex7qzt?useSSL=true&serverTimezone=UTC&allowPublicKeyRetrieval=true",
             "uf7uiezwq3tjedqa", "9vpBUmwZ8xqi4kP8FmXe");
-
         try {
             PreparedStatement ps = conn.prepareStatement(
                 "SELECT p.*, c.nombre AS ciudad FROM propiedades p LEFT JOIN ciudades c ON p.ciudad_id=c.id WHERE p.id=?");
@@ -54,7 +51,6 @@ out.flush();
                 destacado    = String.valueOf(rs.getBoolean("destacado"));
             }
             rs.close(); ps.close();
-
             if (encontrado) {
                 PreparedStatement ps2 = conn.prepareStatement(
                     "SELECT url, descripcion FROM propiedad_fotos WHERE propiedad_id=? ORDER BY es_portada DESC");
@@ -66,17 +62,12 @@ out.flush();
                 });
                 rs2.close(); ps2.close();
             }
-        } finally {
-            conn.close();
-        }
-    } catch (Exception e) {
-        errorMsg = e.getMessage();
-    }
+        } finally { conn.close(); }
+    } catch (Exception e) { errorMsg = e.getMessage(); }
 
     if (!encontrado) {
-    out.println("<h2>No encontrado. Error: " + errorMsg + "</h2>");
-    out.println("<p>ID buscado: " + idParam + "</p>");
-    return;
+        response.sendRedirect(request.getContextPath() + "/propiedades");
+        return;
     }
 
     Usuario usuario  = (Usuario) session.getAttribute("usuario");
@@ -84,144 +75,399 @@ out.flush();
     boolean esCliente = logueado && usuario.isCliente();
     String fotoPortada = fotos.isEmpty() ? "" : fotos.get(0)[0];
     String sufijoPrecio = "ARRIENDO".equals(operacion) ? "/mes" : "";
+    boolean disponible = "DISPONIBLE".equals(estado);
 %>
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= titulo %> — InmoVista</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.0/font/bootstrap-icons.min.css" rel="stylesheet">
-    <style>
-        :root { --dorado: #c9a84c; --oscuro: #1a1a18; }
-        body { background: #f0ede8; font-family: 'Segoe UI', sans-serif; }
-        .navbar { background: var(--oscuro) !important; }
-        .navbar-brand span { color: var(--dorado); }
-        .btn-dorado { background: var(--dorado); color: white; border: none; }
-        .btn-dorado:hover { background: #b8962e; color: white; }
-        .hero-img { width: 100%; height: 420px; object-fit: cover; border-radius: 16px; }
-        .hero-placeholder { width: 100%; height: 420px; background: #e8e4dd; border-radius: 16px; display: flex; align-items: center; justify-content: center; color: #aaa; font-size: 4rem; }
-        .thumb { width: 100%; height: 90px; object-fit: cover; border-radius: 8px; cursor: pointer; border: 2px solid transparent; transition: border .2s; }
-        .thumb.active, .thumb:hover { border-color: var(--dorado); }
-        .info-card { background: white; border-radius: 16px; padding: 2rem; box-shadow: 0 2px 12px rgba(0,0,0,.08); }
-        .badge-tipo { background: var(--oscuro); color: white; padding: .4rem .9rem; border-radius: 20px; font-size: .8rem; }
-        .badge-op  { background: var(--dorado);  color: white; padding: .4rem .9rem; border-radius: 20px; font-size: .8rem; }
-        .feature-item { display: flex; align-items: center; gap: .5rem; padding: .5rem 0; border-bottom: 1px solid #f0ede8; font-size: .9rem; }
-        .feature-item i { color: var(--dorado); width: 20px; }
-        .cita-card { background: white; border-radius: 16px; padding: 1.5rem; box-shadow: 0 2px 12px rgba(0,0,0,.08); border-top: 4px solid var(--dorado); }
-        .precio { font-size: 2rem; font-weight: 700; color: var(--dorado); }
-    </style>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title><%= titulo %> — Sereno</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.0/font/bootstrap-icons.min.css" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+    :root{
+      --navy:#0A1628; --navy-mid:#122040;
+      --blue:#1455A4; --blue-bright:#1E6FD9;
+      --sky:#4A9DE0; --sky-lt:#A8D4F5;
+      --ice:#EAF4FD; --white:#FFFFFF;
+      --slate:#4A5568; --slate-lt:#8A9BB0;
+      --border:#D6E8F7; --bg:#F4F8FD;
+    }
+    body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--navy);min-height:100vh;}
+
+    /* ── NAVBAR ── */
+    .navbar{
+      background:var(--navy);
+      padding:14px 48px;
+      display:flex;justify-content:space-between;align-items:center;
+      position:sticky;top:0;z-index:100;
+      border-bottom:1px solid rgba(255,255,255,0.06);
+    }
+    .nav-logo{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--white);text-decoration:none;}
+    .nav-logo span{color:var(--sky);}
+    .nav-right{display:flex;align-items:center;gap:10px;}
+    .btn-nav-ghost{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border:1.5px solid rgba(255,255,255,0.2);border-radius:20px;color:rgba(255,255,255,0.7);font-family:'Outfit',sans-serif;font-size:13px;text-decoration:none;transition:all .2s;}
+    .btn-nav-ghost:hover{border-color:rgba(255,255,255,0.5);color:var(--white);}
+    .btn-nav-solid{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;background:var(--blue-bright);border:none;border-radius:20px;color:var(--white);font-family:'Outfit',sans-serif;font-size:13px;font-weight:500;text-decoration:none;cursor:pointer;transition:background .2s;}
+    .btn-nav-solid:hover{background:var(--sky);color:var(--white);}
+
+    /* ── PAGE WRAPPER ── */
+    .page{max-width:1200px;margin:0 auto;padding:36px 32px 60px;}
+
+    /* ── BREADCRUMB ── */
+    .breadcrumb{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--slate-lt);margin-bottom:24px;}
+    .breadcrumb a{color:var(--blue-bright);text-decoration:none;}
+    .breadcrumb a:hover{text-decoration:underline;}
+    .breadcrumb i{font-size:11px;}
+
+    /* ── ALERTS ── */
+    .alert{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:10px;font-size:14px;margin-bottom:20px;}
+    .alert-ok{background:rgba(34,197,94,0.08);border:1.5px solid rgba(34,197,94,0.25);color:#16a34a;}
+    .alert-err{background:rgba(224,85,85,0.08);border:1.5px solid rgba(224,85,85,0.25);color:#e05555;}
+    .alert-close{margin-left:auto;background:none;border:none;cursor:pointer;font-size:16px;color:inherit;}
+
+    /* ── MAIN GRID ── */
+    .main-grid{display:grid;grid-template-columns:1fr 360px;gap:28px;align-items:start;}
+
+    /* ── LEFT: MEDIA ── */
+    .media-col{}
+    .hero-img-wrap{
+      width:100%;height:460px;border-radius:16px;overflow:hidden;
+      background:linear-gradient(135deg,var(--ice),#cce3f5);
+      display:flex;align-items:center;justify-content:center;
+      position:relative;margin-bottom:12px;
+    }
+    .hero-img{width:100%;height:460px;object-fit:cover;display:block;}
+    .hero-placeholder{font-size:5rem;color:var(--sky-lt);}
+    .hero-badges{position:absolute;top:16px;left:16px;display:flex;gap:8px;z-index:1;}
+    .hbadge{padding:5px 14px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;}
+    .hbadge-op{background:var(--blue-bright);color:var(--white);}
+    .hbadge-tipo{background:rgba(10,22,40,0.75);backdrop-filter:blur(6px);color:var(--white);}
+    .hbadge-dest{background:rgba(245,158,11,0.9);color:var(--white);}
+
+    .thumbs-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+    .thumb-item{height:80px;border-radius:10px;overflow:hidden;cursor:pointer;border:2px solid transparent;transition:all .2s;}
+    .thumb-item img{width:100%;height:80px;object-fit:cover;display:block;}
+    .thumb-item:hover,.thumb-item.active{border-color:var(--blue-bright);box-shadow:0 0 0 2px rgba(30,111,217,0.2);}
+
+    /* ── INFO SECTION ── */
+    .info-section{margin-top:24px;}
+    .info-panel{background:var(--white);border-radius:14px;border:1.5px solid var(--border);padding:28px;margin-bottom:20px;}
+
+    .prop-eyebrow{font-size:11px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:var(--blue-bright);margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+    .prop-eyebrow::before{content:'';width:16px;height:1.5px;background:var(--blue-bright);}
+    .prop-title{font-family:'Playfair Display',serif;font-size:clamp(24px,3vw,34px);font-weight:900;color:var(--navy);line-height:1.1;margin-bottom:8px;}
+    .prop-loc{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--slate-lt);margin-bottom:20px;}
+    .prop-loc i{color:var(--blue-bright);font-size:13px;}
+    .prop-price{font-family:'Playfair Display',serif;font-size:36px;font-weight:900;color:var(--blue);line-height:1;margin-bottom:4px;}
+    .prop-price-suffix{font-size:14px;font-weight:400;color:var(--slate-lt);font-family:'Outfit',sans-serif;margin-left:4px;}
+    .prop-ref{font-size:12px;color:var(--slate-lt);margin-top:4px;}
+
+    .divider{height:1.5px;background:var(--border);margin:20px 0;}
+
+    .prop-desc{font-size:15px;color:var(--slate);line-height:1.75;font-weight:300;}
+
+    /* Features grid */
+    .features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+    .feat-item{background:var(--ice);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:10px;border:1.5px solid var(--border);}
+    .feat-icon{width:36px;height:36px;border-radius:8px;background:rgba(30,111,217,0.1);color:var(--blue-bright);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+    .feat-val{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--navy);line-height:1;}
+    .feat-lbl{font-size:11px;color:var(--slate-lt);}
+
+    /* Status pill */
+    .status-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:20px;font-size:12px;font-weight:600;}
+    .status-disp{background:rgba(34,197,94,0.1);color:#16a34a;border:1.5px solid rgba(34,197,94,0.25);}
+    .status-no{background:rgba(224,85,85,0.1);color:#e05555;border:1.5px solid rgba(224,85,85,0.2);}
+
+    /* ── RIGHT: CITA CARD ── */
+    .cita-col{position:sticky;top:80px;}
+    .cita-card{background:var(--white);border-radius:16px;border:1.5px solid var(--border);overflow:hidden;}
+    .cita-card-head{
+      background:linear-gradient(130deg,var(--navy) 0%,var(--blue) 100%);
+      padding:24px 24px 20px;position:relative;overflow:hidden;
+    }
+    .cita-card-head::before{content:'';position:absolute;top:-30px;right:-30px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,0.06);}
+    .cita-card-title{font-family:'Playfair Display',serif;font-size:19px;font-weight:700;color:var(--white);margin-bottom:4px;position:relative;z-index:1;}
+    .cita-card-sub{font-size:13px;color:rgba(255,255,255,0.5);position:relative;z-index:1;font-weight:300;}
+    .cita-card-price{font-family:'Playfair Display',serif;font-size:28px;font-weight:900;color:var(--sky-lt);margin-top:12px;position:relative;z-index:1;line-height:1;}
+    .cita-card-price span{font-size:13px;font-weight:400;color:rgba(255,255,255,0.4);font-family:'Outfit',sans-serif;}
+    .cita-body{padding:22px;}
+
+    .field{margin-bottom:16px;}
+    .field label{display:block;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--slate);margin-bottom:6px;}
+    .field input,.field textarea{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--ice);font-family:'Outfit',sans-serif;font-size:14px;color:var(--navy);outline:none;transition:border-color .2s,background .2s;}
+    .field input:focus,.field textarea:focus{border-color:var(--blue-bright);background:var(--white);}
+    .field textarea{resize:vertical;min-height:80px;}
+
+    .btn-submit{width:100%;padding:13px;background:var(--blue-bright);border:none;border-radius:40px;color:var(--white);font-family:'Outfit',sans-serif;font-size:15px;font-weight:600;cursor:pointer;transition:background .2s;display:flex;align-items:center;justify-content:center;gap:8px;}
+    .btn-submit:hover{background:var(--sky);}
+
+    .login-cta{text-align:center;padding:8px 0 4px;}
+    .btn-login{display:block;width:100%;padding:12px;background:var(--blue-bright);border:none;border-radius:40px;color:var(--white);font-family:'Outfit',sans-serif;font-size:14px;font-weight:500;cursor:pointer;text-decoration:none;margin-bottom:10px;transition:background .2s;text-align:center;}
+    .btn-login:hover{background:var(--sky);color:var(--white);}
+    .btn-register{display:block;width:100%;padding:11px;background:transparent;border:1.5px solid var(--border);border-radius:40px;color:var(--slate);font-family:'Outfit',sans-serif;font-size:14px;font-weight:400;cursor:pointer;text-decoration:none;text-align:center;transition:all .2s;}
+    .btn-register:hover{border-color:var(--blue-bright);color:var(--blue-bright);}
+
+    .not-available{background:rgba(0,0,0,0.04);border:1.5px solid var(--border);border-radius:10px;padding:20px;text-align:center;color:var(--slate-lt);}
+    .not-available i{font-size:28px;display:block;margin-bottom:8px;color:var(--border);}
+
+    .cita-footer{padding:14px 22px;border-top:1.5px solid var(--border);background:var(--ice);display:flex;justify-content:center;}
+    .ref-tag{font-size:12px;color:var(--slate-lt);}
+
+    .info-row{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1.5px solid var(--border);font-size:14px;}
+    .info-row:last-child{border-bottom:none;}
+    .info-row i{color:var(--blue-bright);font-size:14px;width:20px;flex-shrink:0;}
+    .info-row-label{color:var(--slate-lt);min-width:100px;}
+    .info-row-val{color:var(--navy);font-weight:500;}
+
+    @media(max-width:1000px){
+      .main-grid{grid-template-columns:1fr;}
+      .cita-col{position:static;}
+      .features-grid{grid-template-columns:repeat(2,1fr);}
+    }
+    @media(max-width:600px){
+      .page{padding:20px 16px 48px;}
+      .navbar{padding:14px 20px;}
+      .hero-img-wrap,.hero-img{height:260px;}
+      .thumbs-row{grid-template-columns:repeat(3,1fr);}
+      .features-grid{grid-template-columns:1fr 1fr;}
+    }
+  </style>
 </head>
 <body>
-<nav class="navbar navbar-dark sticky-top px-4">
-    <a class="navbar-brand fw-bold" href="<%= request.getContextPath() %>/">Inmo<span>Vista</span></a>
-    <div class="d-flex gap-2">
-        <a href="<%= request.getContextPath() %>/propiedades" class="btn btn-outline-light btn-sm"><i class="bi bi-arrow-left me-1"></i>Volver</a>
-        <% if (logueado) { %>
-        <a href="<%= request.getContextPath() + usuario.getDashboardUrl() %>" class="btn btn-sm btn-dorado">Mi Panel</a>
-        <% } else { %>
-        <a href="<%= request.getContextPath() %>/login" class="btn btn-sm btn-dorado">Iniciar Sesión</a>
-        <% } %>
-    </div>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a href="<%= request.getContextPath() %>/" class="nav-logo">Ser<span>eno</span></a>
+  <div class="nav-right">
+    <a href="<%= request.getContextPath() %>/propiedades" class="btn-nav-ghost">
+      <i class="bi bi-arrow-left"></i> Volver
+    </a>
+    <% if (logueado) { %>
+    <a href="<%= request.getContextPath() + usuario.getDashboardUrl() %>" class="btn-nav-solid">
+      <i class="bi bi-grid-1x2"></i> Mi Panel
+    </a>
+    <% } else { %>
+    <a href="<%= request.getContextPath() %>/login" class="btn-nav-solid">
+      <i class="bi bi-box-arrow-in-right"></i> Iniciar Sesión
+    </a>
+    <% } %>
+  </div>
 </nav>
 
-<div class="container py-4">
-    <% if (errorMsg != null) { %><div class="alert alert-warning">Debug: <%= errorMsg %></div><% } %>
-    <% if (msgCita != null) { %><div class="alert alert-success alert-dismissible fade show"><i class="bi bi-check-circle me-2"></i><%= msgCita.replace("+"," ") %><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
-    <% if (errCita != null) { %><div class="alert alert-danger alert-dismissible fade show"><i class="bi bi-exclamation-circle me-2"></i><%= errCita.replace("+"," ") %><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><% } %>
+<div class="page">
 
-    <div class="row g-4">
-        <div class="col-lg-8">
-            <% if (!fotoPortada.isEmpty()) { %>
-            <img id="fotoMain" src="<%= fotoPortada %>" class="hero-img mb-3" alt="<%= titulo %>">
+  <!-- BREADCRUMB -->
+  <div class="breadcrumb">
+    <a href="<%= request.getContextPath() %>/">Inicio</a>
+    <i class="bi bi-chevron-right"></i>
+    <a href="<%= request.getContextPath() %>/propiedades">Propiedades</a>
+    <i class="bi bi-chevron-right"></i>
+    <span style="color:var(--slate)"><%= titulo %></span>
+  </div>
+
+  <!-- ALERTS -->
+  <% if (msgCita != null) { %>
+  <div class="alert alert-ok" id="alertOk">
+    <i class="bi bi-check-circle-fill"></i> <%= msgCita.replace("+"," ") %>
+    <button class="alert-close" onclick="document.getElementById('alertOk').remove()">×</button>
+  </div>
+  <% } %>
+  <% if (errCita != null) { %>
+  <div class="alert alert-err" id="alertErr">
+    <i class="bi bi-exclamation-circle-fill"></i> <%= errCita.replace("+"," ") %>
+    <button class="alert-close" onclick="document.getElementById('alertErr').remove()">×</button>
+  </div>
+  <% } %>
+
+  <div class="main-grid">
+
+    <!-- ── LEFT COLUMN ── -->
+    <div>
+
+      <!-- MEDIA -->
+      <div class="hero-img-wrap">
+        <div class="hero-badges">
+          <span class="hbadge hbadge-op"><%= operacion %></span>
+          <span class="hbadge hbadge-tipo"><%= tipo %></span>
+          <% if ("true".equals(destacado)) { %><span class="hbadge hbadge-dest">⭐ Destacado</span><% } %>
+        </div>
+        <% if (!fotoPortada.isEmpty()) { %>
+          <img id="fotoMain" src="<%= fotoPortada %>" class="hero-img" alt="<%= titulo %>"/>
+        <% } else { %>
+          <div class="hero-placeholder"><i class="bi bi-building"></i></div>
+        <% } %>
+      </div>
+
+      <% if (fotos.size() > 1) { %>
+      <div class="thumbs-row" style="margin-bottom:24px">
+        <% for (int fi=0; fi<Math.min(fotos.size(),8); fi++) { String[] f = fotos.get(fi); %>
+        <div class="thumb-item <%= fi==0?"active":"" %>" onclick="cambiarFoto(this,'<%= f[0] %>')">
+          <img src="<%= f[0] %>" alt="<%= f[1] %>"/>
+        </div>
+        <% } %>
+      </div>
+      <% } %>
+
+      <!-- INFO PANELS -->
+      <div class="info-section">
+
+        <!-- Título + precio -->
+        <div class="info-panel">
+          <div class="prop-eyebrow"><%= tipo %> en <%= operacion.toLowerCase() %></div>
+          <h1 class="prop-title"><%= titulo %></h1>
+          <div class="prop-loc">
+            <i class="bi bi-geo-alt-fill"></i>
+            <%= direccion %><% if (!barrio.isEmpty()) { %>, <%= barrio %><% } %><% if (!ciudadNombre.isEmpty()) { %> — <%= ciudadNombre %><% } %>
+          </div>
+
+          <div class="prop-price">$<%= precio %><span class="prop-price-suffix"><%= sufijoPrecio %></span></div>
+          <div class="prop-ref">Ref. #<%= propId %></div>
+
+          <div class="divider"></div>
+
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+            <% if (disponible) { %>
+              <span class="status-pill status-disp"><i class="bi bi-check-circle-fill"></i> Disponible</span>
             <% } else { %>
-            <div class="hero-placeholder mb-3"><i class="bi bi-building"></i></div>
+              <span class="status-pill status-no"><i class="bi bi-x-circle-fill"></i> No disponible</span>
             <% } %>
+          </div>
 
-            <% if (fotos.size() > 1) { %>
-            <div class="row g-2 mb-3">
-                <% for (int fi=0; fi<fotos.size(); fi++) { String[] f = fotos.get(fi); %>
-                <div class="col-3">
-                    <img src="<%= f[0] %>" class="thumb <%= fi==0?"active":"" %>"
-                         onclick="cambiarFoto(this,'<%= f[0] %>')" alt="<%= f[1] %>">
-                </div>
-                <% } %>
-            </div>
-            <% } %>
-
-            <div class="info-card mb-4">
-                <div class="d-flex flex-wrap gap-2 mb-2">
-                    <span class="badge-tipo"><%= tipo %></span>
-                    <span class="badge-op"><%= operacion %></span>
-                    <% if ("true".equals(destacado)) { %><span class="badge bg-warning text-dark">⭐ Destacado</span><% } %>
-                </div>
-                <h1 class="fw-bold mb-1" style="font-size:1.6rem;"><%= titulo %></h1>
-                <p class="text-muted mb-2"><i class="bi bi-geo-alt me-1"></i><%= direccion %><% if (!barrio.isEmpty()) { %>, <%= barrio %><% } %><% if (!ciudadNombre.isEmpty()) { %> — <%= ciudadNombre %><% } %></p>
-                <div class="precio mb-3">$<%= precio %> <small class="text-muted fs-6"><%= sufijoPrecio %></small></div>
-                <p style="color:#555; line-height:1.7;"><%= descripcion %></p>
-            </div>
-
-            <div class="info-card">
-                <h5 class="fw-bold mb-3">Características</h5>
-                <div class="row">
-                    <div class="col-md-6">
-                        <% if (habitaciones > 0) { %><div class="feature-item"><i class="bi bi-door-open"></i><span><strong><%= habitaciones %></strong> Habitaciones</span></div><% } %>
-                        <% if (banos > 0) { %><div class="feature-item"><i class="bi bi-droplet"></i><span><strong><%= banos %></strong> Baños</span></div><% } %>
-                        <% if (parqueaderos > 0) { %><div class="feature-item"><i class="bi bi-car-front"></i><span><strong><%= parqueaderos %></strong> Parqueaderos</span></div><% } %>
-                    </div>
-                    <div class="col-md-6">
-                        <% if (!area.isEmpty()) { %><div class="feature-item"><i class="bi bi-rulers"></i><span><strong><%= area %></strong> m²</span></div><% } %>
-                        <% if (!estrato.isEmpty()) { %><div class="feature-item"><i class="bi bi-layers"></i><span>Estrato <strong><%= estrato %></strong></span></div><% } %>
-                        <div class="feature-item"><i class="bi bi-check-circle"></i><span>Estado: <strong><%= estado %></strong></span></div>
-                    </div>
-                </div>
-            </div>
+          <% if (!descripcion.isEmpty()) { %>
+          <p class="prop-desc"><%= descripcion %></p>
+          <% } %>
         </div>
 
-        <div class="col-lg-4">
-            <div class="cita-card sticky-top" style="top:80px;" id="cita">
-                <h5 class="fw-bold mb-1">¿Te interesa esta propiedad?</h5>
-                <p class="text-muted small mb-3">Agenda una visita con el agente</p>
-                <% if ("DISPONIBLE".equals(estado)) { %>
-                    <% if (esCliente) { %>
-                    <!-- debug: propId=<%= propId %> -->
-                    <form method="post" action="<%= request.getContextPath() %>/citas">
-                        <input type="hidden" name="propiedadId" value="<%= propId %>">
-                        <div class="mb-3">
-                            <label class="form-label small fw-semibold">Fecha y hora</label>
-                            <input type="datetime-local" name="fechaHora" class="form-control" required
-                                   min="<%= new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm").format(new java.util.Date()) %>">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label small fw-semibold">Mensaje (opcional)</label>
-                            <textarea name="mensaje" class="form-control" rows="3" placeholder="Alguna pregunta o comentario..."></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-dorado w-100"><i class="bi bi-calendar-check me-2"></i>Agendar Visita</button>
-                    </form>
-                    <% } else if (logueado) { %>
-                    <div class="alert alert-info small">Solo los clientes pueden agendar citas.</div>
-                    <% } else { %>
-                    <p class="text-muted small mb-3">Inicia sesión para agendar una visita.</p>
-                    <a href="<%= request.getContextPath() %>/login" class="btn btn-dorado w-100 mb-2"><i class="bi bi-box-arrow-in-right me-2"></i>Iniciar Sesión</a>
-                    <a href="<%= request.getContextPath() %>/register" class="btn btn-outline-secondary w-100">Crear cuenta gratis</a>
-                    <% } %>
-                <% } else { %>
-                <div class="alert alert-secondary text-center"><i class="bi bi-x-circle me-2"></i>Esta propiedad no está disponible.</div>
-                <% } %>
-                <hr>
-                <div class="text-center"><small class="text-muted">Ref. #<%= propId %></small></div>
+        <!-- Características -->
+        <% boolean hasFeats = habitaciones>0||banos>0||parqueaderos>0||!area.isEmpty()||!estrato.isEmpty(); %>
+        <% if (hasFeats) { %>
+        <div class="info-panel">
+          <h3 style="font-family:'Playfair Display',serif;font-size:19px;font-weight:700;color:var(--navy);margin-bottom:18px;">Características</h3>
+          <div class="features-grid">
+            <% if (habitaciones > 0) { %>
+            <div class="feat-item">
+              <div class="feat-icon"><i class="bi bi-door-open"></i></div>
+              <div><div class="feat-val"><%= habitaciones %></div><div class="feat-lbl">Habitaciones</div></div>
             </div>
+            <% } %>
+            <% if (banos > 0) { %>
+            <div class="feat-item">
+              <div class="feat-icon"><i class="bi bi-droplet"></i></div>
+              <div><div class="feat-val"><%= banos %></div><div class="feat-lbl">Baños</div></div>
+            </div>
+            <% } %>
+            <% if (parqueaderos > 0) { %>
+            <div class="feat-item">
+              <div class="feat-icon"><i class="bi bi-car-front"></i></div>
+              <div><div class="feat-val"><%= parqueaderos %></div><div class="feat-lbl">Parqueaderos</div></div>
+            </div>
+            <% } %>
+            <% if (!area.isEmpty()) { %>
+            <div class="feat-item">
+              <div class="feat-icon"><i class="bi bi-rulers"></i></div>
+              <div><div class="feat-val"><%= area %></div><div class="feat-lbl">m² área</div></div>
+            </div>
+            <% } %>
+            <% if (!estrato.isEmpty()) { %>
+            <div class="feat-item">
+              <div class="feat-icon"><i class="bi bi-layers"></i></div>
+              <div><div class="feat-val"><%= estrato %></div><div class="feat-lbl">Estrato</div></div>
+            </div>
+            <% } %>
+          </div>
         </div>
+        <% } %>
+
+        <!-- Detalles adicionales -->
+        <div class="info-panel">
+          <h3 style="font-family:'Playfair Display',serif;font-size:19px;font-weight:700;color:var(--navy);margin-bottom:18px;">Detalles</h3>
+          <% if (!tipo.isEmpty()) { %>
+          <div class="info-row"><i class="bi bi-building"></i><span class="info-row-label">Tipo</span><span class="info-row-val"><%= tipo %></span></div>
+          <% } %>
+          <% if (!operacion.isEmpty()) { %>
+          <div class="info-row"><i class="bi bi-arrow-left-right"></i><span class="info-row-label">Operación</span><span class="info-row-val"><%= operacion %></span></div>
+          <% } %>
+          <% if (!estado.isEmpty()) { %>
+          <div class="info-row"><i class="bi bi-info-circle"></i><span class="info-row-label">Estado</span><span class="info-row-val"><%= estado %></span></div>
+          <% } %>
+          <% if (!ciudadNombre.isEmpty()) { %>
+          <div class="info-row"><i class="bi bi-geo-alt"></i><span class="info-row-label">Ciudad</span><span class="info-row-val"><%= ciudadNombre %></span></div>
+          <% } %>
+          <% if (!barrio.isEmpty()) { %>
+          <div class="info-row"><i class="bi bi-map"></i><span class="info-row-label">Barrio</span><span class="info-row-val"><%= barrio %></span></div>
+          <% } %>
+        </div>
+
+      </div>
     </div>
-</div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <!-- ── RIGHT COLUMN: CITA CARD ── -->
+    <div class="cita-col" id="cita">
+      <div class="cita-card">
+        <div class="cita-card-head">
+          <div class="cita-card-title">¿Te interesa?</div>
+          <div class="cita-card-sub">Agenda una visita con el agente</div>
+          <div class="cita-card-price">$<%= precio %><span> <%= sufijoPrecio %></span></div>
+        </div>
+        <div class="cita-body">
+          <% if (disponible) { %>
+            <% if (esCliente) { %>
+            <form method="post" action="<%= request.getContextPath() %>/citas">
+              <input type="hidden" name="propiedadId" value="<%= propId %>"/>
+              <div class="field">
+                <label>Fecha y hora</label>
+                <input type="datetime-local" name="fechaHora" required
+                       min="<%= new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm").format(new java.util.Date()) %>"/>
+              </div>
+              <div class="field">
+                <label>Mensaje (opcional)</label>
+                <textarea name="mensaje" placeholder="Alguna pregunta o comentario…"></textarea>
+              </div>
+              <button type="submit" class="btn-submit">
+                <i class="bi bi-calendar-check"></i> Agendar visita
+              </button>
+            </form>
+            <% } else if (logueado) { %>
+            <div class="not-available">
+              <i class="bi bi-person-x"></i>
+              Solo los clientes pueden agendar visitas.
+            </div>
+            <% } else { %>
+            <div class="login-cta">
+              <p style="font-size:13px;color:var(--slate-lt);margin-bottom:16px;line-height:1.6;">Inicia sesión o crea una cuenta gratuita para agendar tu visita.</p>
+              <a href="<%= request.getContextPath() %>/login" class="btn-login">
+                <i class="bi bi-box-arrow-in-right"></i> Iniciar Sesión
+              </a>
+              <a href="<%= request.getContextPath() %>/register" class="btn-register">
+                Crear cuenta gratis
+              </a>
+            </div>
+            <% } %>
+          <% } else { %>
+          <div class="not-available">
+            <i class="bi bi-building-x"></i>
+            Esta propiedad no está disponible actualmente.
+          </div>
+          <% } %>
+        </div>
+        <div class="cita-footer">
+          <span class="ref-tag"><i class="bi bi-hash" style="font-size:11px"></i> Referencia <%= propId %></span>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main-grid -->
+</div><!-- /page -->
+
 <script>
 function cambiarFoto(el, url) {
-    document.getElementById('fotoMain').src = url;
-    document.querySelectorAll('.thumb').forEach(t => t.classList.remove('active'));
-    el.classList.add('active');
+  const main = document.getElementById('fotoMain');
+  if (main) main.src = url;
+  document.querySelectorAll('.thumb-item').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
 }
 </script>
 </body>

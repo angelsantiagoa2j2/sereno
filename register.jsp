@@ -4,148 +4,109 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>InmoVista — Crear Cuenta</title>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <title>Sereno — Crear Cuenta</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
   <style>
     *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
     :root{
-      --cream:#F5F0E8;--dark:#1A1A18;--gold:#C9A84C;--gold-lt:#E8C97A;
-      --muted:#6B6455;--white:#FFFFFF;--red:#e05555;
+      --navy:#0A1628; --navy-mid:#122040;
+      --blue:#1455A4; --blue-bright:#1E6FD9;
+      --sky:#4A9DE0; --sky-lt:#A8D4F5;
+      --ice:#EAF4FD; --white:#FFFFFF;
+      --slate:#4A5568; --slate-lt:#8A9BB0;
+      --border:#D6E8F7; --red:#e05555;
     }
-    body{font-family:'DM Sans',sans-serif;background:var(--cream);min-height:100vh;}
-    header{
-      background:var(--dark);padding:18px 40px;
-      display:flex;justify-content:space-between;align-items:center;
-    }
-    .logo{
-      font-family:'Cormorant Garamond',serif;
-      font-size:24px;font-weight:700;color:var(--white);text-decoration:none;
-    }
-    .logo span{color:var(--gold);}
-    .login-link{
-      color:rgba(255,255,255,.6);font-size:14px;text-decoration:none;
-      transition:color .2s;
-    }
-    .login-link:hover{color:var(--gold);}
+    body{font-family:'Outfit',sans-serif;background:var(--navy);min-height:100vh;position:relative;overflow-x:hidden;}
+    .bg-glow{position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse 50% 60% at 10% 30%,rgba(20,85,164,0.3) 0%,transparent 65%),radial-gradient(ellipse 40% 50% at 90% 70%,rgba(74,157,224,0.15) 0%,transparent 60%);}
 
-    main{
-      max-width:680px;margin:0 auto;
-      padding:60px 24px 80px;
-    }
-    .page-title{
-      font-family:'Cormorant Garamond',serif;
-      font-size:42px;font-weight:300;color:var(--dark);
-      margin-bottom:8px;text-align:center;
-    }
-    .page-sub{
-      text-align:center;color:var(--muted);
-      font-size:15px;margin-bottom:40px;font-weight:300;
-    }
+    header{position:relative;z-index:10;display:flex;justify-content:space-between;align-items:center;padding:20px 64px;border-bottom:1px solid rgba(255,255,255,0.05);}
+    .logo{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:var(--white);text-decoration:none;}
+    .logo span{color:var(--sky);}
+    .login-link{color:rgba(255,255,255,0.5);font-size:14px;text-decoration:none;transition:color .2s;display:flex;align-items:center;gap:6px;}
+    .login-link:hover{color:var(--sky-lt);}
 
-    .card{
-      background:var(--white);border-radius:6px;
-      padding:44px 48px;
-      box-shadow:0 4px 30px rgba(0,0,0,.06);
-    }
-    @media(max-width:600px){.card{padding:28px 20px;}}
+    main{position:relative;z-index:1;max-width:720px;margin:0 auto;padding:52px 24px 80px;}
+    .page-eyebrow{display:flex;align-items:center;justify-content:center;gap:10px;color:var(--sky);font-size:11px;font-weight:600;letter-spacing:3px;text-transform:uppercase;margin-bottom:12px;}
+    .page-eyebrow::before,.page-eyebrow::after{content:'';width:24px;height:1.5px;background:var(--sky);opacity:0.5;}
+    .page-title{font-family:'Playfair Display',serif;font-size:clamp(32px,4vw,46px);font-weight:900;color:var(--white);text-align:center;margin-bottom:8px;line-height:1.1;}
+    .page-sub{text-align:center;color:rgba(255,255,255,0.4);font-size:15px;margin-bottom:36px;font-weight:300;}
 
-    /* Selector de rol */
-    .rol-selector{
-      display:grid;grid-template-columns:1fr 1fr;
-      gap:14px;margin-bottom:32px;
-    }
+    .card{background:var(--white);border-radius:20px;padding:48px 44px;box-shadow:0 40px 80px rgba(0,0,0,0.4);}
+    @media(max-width:600px){.card{padding:32px 22px;}header{padding:16px 24px;}}
+
+    .alert{padding:12px 16px;border-radius:8px;font-size:13px;margin-bottom:24px;display:flex;align-items:flex-start;gap:8px;background:#fde8e8;color:#c0392b;border-left:3px solid var(--red);}
+    .sec-label{font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--slate-lt);margin-bottom:14px;padding-bottom:10px;border-bottom:1.5px solid var(--border);}
+
+    /* ── ROLE SELECTOR: 3 columnas ── */
+    .rol-selector{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:32px;}
+    @media(max-width:560px){.rol-selector{grid-template-columns:1fr;}}
+
     .rol-option{position:relative;}
     .rol-option input[type=radio]{position:absolute;opacity:0;width:0;height:0;}
     .rol-label{
-      display:flex;flex-direction:column;align-items:center;
-      gap:10px;padding:20px 16px;border:2px solid rgba(0,0,0,.1);
-      border-radius:4px;cursor:pointer;transition:all .2s;text-align:center;
+      display:flex;flex-direction:column;align-items:center;gap:8px;
+      padding:20px 14px;border:2px solid var(--border);
+      border-radius:12px;cursor:pointer;transition:all .2s;
+      text-align:center;background:var(--ice);height:100%;
     }
-    .rol-label:hover{border-color:var(--gold);}
+    .rol-label:hover{border-color:var(--sky);background:var(--white);}
     .rol-option input:checked + .rol-label{
-      border-color:var(--gold);background:rgba(201,168,76,.06);
-    }
-    .rol-icon{font-size:30px;}
-    .rol-name{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;color:var(--dark);}
-    .rol-desc{font-size:12px;color:var(--muted);font-weight:300;}
-
-    .section-title{
-      font-size:11px;font-weight:500;letter-spacing:2px;
-      text-transform:uppercase;color:var(--muted);
-      margin-bottom:20px;padding-bottom:10px;
-      border-bottom:1px solid rgba(0,0,0,.07);
+      border-color:var(--blue-bright);
+      background:rgba(30,111,217,0.05);
+      box-shadow:0 0 0 3px rgba(30,111,217,0.1);
     }
 
-    .fields-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+    /* Admin — estilo morado diferenciado */
+    .rol-option.admin-opt .rol-label{border-color:rgba(139,92,246,0.25);background:rgba(139,92,246,0.04);}
+    .rol-option.admin-opt .rol-label:hover{border-color:#8b5cf6;background:rgba(139,92,246,0.07);}
+    .rol-option.admin-opt input:checked + .rol-label{border-color:#8b5cf6;background:rgba(139,92,246,0.06);box-shadow:0 0 0 3px rgba(139,92,246,0.12);}
+    .rol-option.admin-opt .rol-name{color:#5b21b6;}
+    .admin-badge{display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:2px 8px;background:rgba(139,92,246,0.1);color:#7c3aed;border-radius:20px;border:1px solid rgba(139,92,246,0.2);margin-top:2px;}
+
+    .rol-icon{font-size:28px;}
+    .rol-name{font-family:'Playfair Display',serif;font-size:16px;font-weight:700;color:var(--navy);}
+    .rol-desc{font-size:11px;color:var(--slate-lt);font-weight:300;line-height:1.4;}
+
+    /* Fields */
+    .fields-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
     @media(max-width:500px){.fields-grid{grid-template-columns:1fr;}}
     .field-full{grid-column:1/-1;}
-
     .field{margin-bottom:0;}
-    .field label{
-      display:block;font-size:12px;font-weight:500;
-      letter-spacing:.8px;text-transform:uppercase;
-      color:var(--muted);margin-bottom:7px;
-    }
-    .field input,.field select{
-      width:100%;padding:12px 14px;
-      border:1.5px solid rgba(0,0,0,.12);border-radius:3px;
-      background:var(--white);font-family:'DM Sans',sans-serif;
-      font-size:14px;color:var(--dark);outline:none;
-      transition:border-color .2s,box-shadow .2s;
-    }
-    .field input:focus,.field select:focus{
-      border-color:var(--gold);
-      box-shadow:0 0 0 3px rgba(201,168,76,.12);
-    }
-    .field input::placeholder{color:rgba(0,0,0,.3);}
-    .hint{color:var(--muted);font-size:11px;margin-top:5px;}
-
-    .password-strength{
-      height:3px;background:rgba(0,0,0,.08);
-      border-radius:2px;margin-top:6px;overflow:hidden;
-    }
+    .field label{display:block;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--slate);margin-bottom:7px;}
+    .field input,.field select{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--ice);font-family:'Outfit',sans-serif;font-size:14px;color:var(--navy);outline:none;transition:border-color .2s,box-shadow .2s,background .2s;}
+    .field input:focus,.field select:focus{border-color:var(--blue-bright);background:var(--white);box-shadow:0 0 0 3px rgba(30,111,217,0.1);}
+    .field input::placeholder{color:rgba(0,0,0,0.25);}
+    .hint{color:var(--slate-lt);font-size:11px;margin-top:5px;}
+    .password-strength{height:3px;background:var(--border);border-radius:2px;margin-top:6px;overflow:hidden;}
     .strength-bar{height:100%;width:0%;transition:width .3s,background .3s;border-radius:2px;}
 
-    .alert{
-      padding:12px 16px;border-radius:3px;font-size:14px;
-      margin-bottom:24px;border-left:3px solid var(--red);
-      background:#fde8e8;color:#c0392b;
-    }
+    .terms-row{display:flex;align-items:flex-start;gap:10px;margin-top:28px;margin-bottom:24px;}
+    .terms-row input{width:16px;height:16px;accent-color:var(--blue-bright);margin-top:2px;flex-shrink:0;cursor:pointer;}
+    .terms-row label{font-size:13px;color:var(--slate-lt);font-weight:300;line-height:1.6;}
+    .terms-row a{color:var(--blue-bright);text-decoration:none;}
+    .terms-row a:hover{text-decoration:underline;}
 
-    .terms-row{
-      display:flex;align-items:flex-start;gap:10px;
-      margin-top:28px;margin-bottom:24px;
-    }
-    .terms-row input{width:16px;height:16px;accent-color:var(--gold);margin-top:2px;flex-shrink:0;}
-    .terms-row label{font-size:13px;color:var(--muted);}
-    .terms-row a{color:var(--gold);text-decoration:none;}
+    .btn-submit{width:100%;padding:14px;background:var(--blue-bright);border:none;border-radius:40px;color:var(--white);font-family:'Outfit',sans-serif;font-size:15px;font-weight:600;letter-spacing:0.3px;cursor:pointer;transition:background .2s;}
+    .btn-submit:hover{background:var(--sky);}
 
-    .btn-submit{
-      width:100%;padding:14px;
-      background:var(--dark);border:none;border-radius:3px;
-      color:var(--white);font-family:'DM Sans',sans-serif;
-      font-size:15px;font-weight:500;letter-spacing:.5px;
-      cursor:pointer;transition:background .2s;
-    }
-    .btn-submit:hover{background:#2d2d2a;}
-
-    .login-cta{
-      text-align:center;margin-top:24px;
-      color:var(--muted);font-size:14px;
-    }
-    .login-cta a{color:var(--gold);text-decoration:none;font-weight:500;}
+    .login-cta{text-align:center;margin-top:22px;color:var(--slate-lt);font-size:14px;}
+    .login-cta a{color:var(--blue-bright);text-decoration:none;font-weight:500;}
+    .login-cta a:hover{text-decoration:underline;}
   </style>
 </head>
 <body>
 
+<div class="bg-glow"></div>
+
 <header>
-  <a href="${pageContext.request.contextPath}/" class="logo">Inmo<span>Vista</span></a>
+  <a href="${pageContext.request.contextPath}/" class="logo">Ser<span>eno</span></a>
   <a href="${pageContext.request.contextPath}/login" class="login-link">Ya tengo cuenta →</a>
 </header>
 
 <main>
-  <h1 class="page-title">Crear cuenta</h1>
-  <p class="page-sub">Únete a InmoVista y encuentra tu próximo hogar</p>
+  <div class="page-eyebrow">Únete</div>
+  <h1 class="page-title">Crea tu cuenta</h1>
+  <p class="page-sub">Encuentra tu próximo hogar con Sereno</p>
 
   <div class="card">
 
@@ -156,31 +117,43 @@
 
     <form method="post" action="${pageContext.request.contextPath}/register">
 
-      <!-- Selector de rol -->
-      <div class="section-title">¿Cómo quieres usar InmoVista?</div>
+      <div class="sec-label">¿Cómo quieres usar Sereno?</div>
       <div class="rol-selector">
+
         <div class="rol-option">
-          <input type="radio" id="rol-cliente" name="rol" value="CLIENTE"
-            <%= "CLIENTE".equals(request.getAttribute("fRol")) || request.getAttribute("fRol") == null ? "checked" : "" %>/>
+          <input type="radio" id="rol-cliente" name="rol" value="cliente"
+            <%= "cliente".equals(request.getAttribute("fRol")) || request.getAttribute("fRol") == null ? "checked" : "" %>/>
           <label class="rol-label" for="rol-cliente">
             <span class="rol-icon">🔍</span>
             <span class="rol-name">Cliente</span>
             <span class="rol-desc">Busco propiedades para comprar o arrendar</span>
           </label>
         </div>
+
         <div class="rol-option">
-          <input type="radio" id="rol-inmo" name="rol" value="INMOBILIARIA"
-            <%= "INMOBILIARIA".equals(request.getAttribute("fRol")) ? "checked" : "" %>/>
+          <input type="radio" id="rol-inmo" name="rol" value="agente"
+            <%= "agente".equals(request.getAttribute("fRol")) ? "checked" : "" %>/>
           <label class="rol-label" for="rol-inmo">
             <span class="rol-icon">🏢</span>
             <span class="rol-name">Inmobiliaria</span>
             <span class="rol-desc">Listo y gestiono propiedades</span>
           </label>
         </div>
+
+        <div class="rol-option admin-opt">
+          <input type="radio" id="rol-admin" name="rol" value="admin"
+            <%= "admin".equals(request.getAttribute("fRol")) ? "checked" : "" %>/>
+          <label class="rol-label" for="rol-admin">
+            <span class="rol-icon">🛡️</span>
+            <span class="rol-name">Administrador</span>
+            <span class="admin-badge">⚙ Acceso total</span>
+            <span class="rol-desc">Gestión completa de la plataforma</span>
+          </label>
+        </div>
+
       </div>
 
-      <!-- Datos personales -->
-      <div class="section-title">Datos personales</div>
+      <div class="sec-label" style="margin-bottom:20px">Datos personales</div>
       <div class="fields-grid">
 
         <div class="field">
@@ -216,6 +189,7 @@
                  placeholder="Mínimo 8 caracteres" required
                  autocomplete="new-password" oninput="checkStrength(this.value)"/>
           <div class="password-strength"><div class="strength-bar" id="strengthBar"></div></div>
+          <div class="hint" id="strengthHint"></div>
         </div>
 
         <div class="field">
@@ -231,7 +205,7 @@
         <input type="checkbox" id="terms" required/>
         <label for="terms">
           Acepto los <a href="#">Términos de uso</a> y la
-          <a href="#">Política de privacidad</a> de InmoVista
+          <a href="#">Política de privacidad</a> de Sereno
         </label>
       </div>
 
@@ -248,14 +222,18 @@
 <script>
   function checkStrength(val) {
     const bar = document.getElementById('strengthBar');
+    const hint = document.getElementById('strengthHint');
     let score = 0;
-    if (val.length >= 8)  score++;
-    if (/[A-Z]/.test(val)) score++;
-    if (/[0-9]/.test(val)) score++;
-    if (/[^A-Za-z0-9]/.test(val)) score++;
-    const colors = ['#e05555','#f0a500','#4caf50','#2e7d32'];
-    bar.style.width  = (score * 25) + '%';
+    if (val.length >= 8)           score++;
+    if (/[A-Z]/.test(val))         score++;
+    if (/[0-9]/.test(val))         score++;
+    if (/[^A-Za-z0-9]/.test(val))  score++;
+    const colors = ['#e05555','#f0a500','#4A9DE0','#1455A4'];
+    const labels = ['Muy débil','Regular','Buena','Muy segura'];
+    bar.style.width = (score * 25) + '%';
     bar.style.background = colors[score - 1] || 'transparent';
+    hint.textContent = score > 0 ? labels[score - 1] : '';
+    hint.style.color = colors[score - 1] || 'transparent';
   }
 </script>
 </body>
